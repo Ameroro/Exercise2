@@ -21,11 +21,16 @@ func number_server(add_number <-chan int, control <-chan int, number chan<- int)
 		select {
 			// TODO: receive different messages and handle them correctly
 			// You will at least need to update the number and handle control signals.
-			case a <- add_number :
+			case a := <-add_number:
 				i += a
-			case getNumber <- control:
-				number <- i
-			case control <- decrement:
+			case b := <-control:
+				if b == GetNumber {
+					number <- i
+				}
+				if b == Exit {
+					close(number)
+				}
+
 
 			default:
 		}
@@ -33,7 +38,7 @@ func number_server(add_number <-chan int, control <-chan int, number chan<- int)
 }
 
 func incrementing(add_number chan<-int, finished chan<- bool) {
-	for j := 0; j<1000000; j++ {
+	for j := 0; j<1000001; j++ {
 		add_number <- 1
 	}
 	//TODO: signal that the goroutine is finished
@@ -66,9 +71,10 @@ func main() {
 	// TODO: Spawn the required goroutines
 
 	// TODO: block on finished from both "worker" goroutines
-
-		
-	control<-GetNumber
-	Println("The magic number is:", <- number)
-	control<-Exit
+	x, y := <-finished, <-finished
+	if x == true && y == true {
+		control<-GetNumber
+		Println("The magic number is:", <- number)
+		control<-Exit
+	}
 }
